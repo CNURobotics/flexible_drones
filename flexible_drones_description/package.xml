@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd"
+            schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>flexible_drones_description</name>
+  <version>0.0.1</version>
+  <description>Shared robot and gate description assets for Flexible Drones.</description>
+
+  <author>Emma Faith</author>
+  <author>Andrew Farney</author>
+  <author>Sebastian Fox</author>
+  <author>Evangelina Grimes</author>
+  <author>Aubrie Kooiker</author>
+  <maintainer email="robotics@cnu.edu">David Conner</maintainer>
+  <url type="website">https://github.com/CNURobotics/flexible_drones</url>
+  <url type="bugtracker">https://github.com/CNURobotics/flexible_drones/issues</url>
+  <url type="repository">https://github.com/CNURobotics/flexible_drones</url>
+
+
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+
+  <depend>ament_index_python</depend>
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <depend>flexible_drones_core</depend>
+  <depend>geometry_msgs</depend>
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2_ros</depend>
+
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+
+  <test_depend>ament_cmake_copyright</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

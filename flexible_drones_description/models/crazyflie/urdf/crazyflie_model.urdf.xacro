@@ -1,0 +1,150 @@
+<?xml version="1.0" ?>
+<!--
+
+MIT License
+Copyright (c) 2025 Christopher Newport University, based on model.sdf from BitCraze
+Copyright (c) 2024 Bitcraze
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="$(arg drone_name)" >
+    <xacro:arg name="drone_name" default="crazyflie"/>
+
+    <!-- Minimal inertials keep urdf2sdf from dropping preserved links. The
+         KinematicDrone plugin owns motion and directly sets WorldPose each tick. -->
+    <xacro:macro name="tiny_prop_inertial">
+      <inertial>
+        <mass value="1e-6"/>
+        <inertia ixx="1e-9" iyy="1e-9" izz="1e-9"
+                 ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+    </xacro:macro>
+
+    <link name="$(arg drone_name)">
+      <!-- inertial required by urdf2sdf to keep the root link in the model;
+           <kinematic>true</kinematic> in gazebo block prevents the physics engine from using it -->
+      <inertial>
+        <mass value="0.025"/>
+        <inertia ixx="1.6571710e-05" iyy="1.6655602e-05" izz="2.9261652e-05"
+                 ixy="8.30806e-07" ixz="7.18277e-07" iyz="1.800197e-06"/>
+      </inertial>
+      <collision name="$(arg drone_name)/body_collision">
+        <geometry>
+         <box size="0.10 0.10 0.03485"/>
+        </geometry>
+      </collision>
+      <visual name="$(arg drone_name)/body_visual">
+        <geometry>
+          <mesh filename="package://flexible_drones_description/models/crazyflie/meshes/collada_files/cf2_assembly.dae"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <link name="$(arg drone_name)/m1_prop">
+      <xacro:tiny_prop_inertial/>
+      <visual name="$(arg drone_name)/m1_visual">
+        <geometry>
+          <mesh filename="package://flexible_drones_description/models/crazyflie/meshes/collada_files/ccw_prop.dae"/>
+        </geometry>
+      </visual>
+    </link>
+    <link name="$(arg drone_name)/m2_prop">
+      <xacro:tiny_prop_inertial/>
+      <visual name="$(arg drone_name)/m2_visual">
+        <geometry>
+          <mesh filename="package://flexible_drones_description/models/crazyflie/meshes/collada_files/cw_prop.dae"/>
+        </geometry>
+      </visual>
+    </link>
+    <link name="$(arg drone_name)/m3_prop">
+      <xacro:tiny_prop_inertial/>
+      <visual name="$(arg drone_name)/m3_visual">
+        <geometry>
+          <mesh filename="package://flexible_drones_description/models/crazyflie/meshes/collada_files/ccw_prop.dae"/>
+        </geometry>
+      </visual>
+    </link>
+    <link name="$(arg drone_name)/m4_prop">
+      <xacro:tiny_prop_inertial/>
+      <visual name="$(arg drone_name)/m4_visual">
+        <geometry>
+          <mesh filename="package://flexible_drones_description/models/crazyflie/meshes/collada_files/cw_prop.dae"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <!-- Prop joints define the static offset of each prop relative to the
+         body.  They remain continuous so the plugin can spin the prop links
+         without fighting a fixed-joint constraint. -->
+    <joint name="$(arg drone_name)/m1_joint" type="continuous">
+      <child link="$(arg drone_name)/m1_prop" />
+      <parent link="$(arg drone_name)" />
+      <origin xyz="0.031 -0.031 0.006" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+    <joint name="$(arg drone_name)/m2_joint" type="continuous">
+      <origin xyz="-0.031 -0.031 0.006" rpy="0 0 0"/>
+      <child link="$(arg drone_name)/m2_prop"/>
+      <parent link="$(arg drone_name)"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+    <joint name="$(arg drone_name)/m3_joint" type="continuous">
+      <origin xyz="-0.031 0.031 0.006" rpy="0 0 0"/>
+      <child link="$(arg drone_name)/m3_prop"/>
+      <parent link="$(arg drone_name)"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+    <joint name="$(arg drone_name)/m4_joint" type="continuous">
+      <origin xyz="0.031 0.031 0.006" rpy="0 0 0"/>
+      <child link="$(arg drone_name)/m4_prop"/>
+      <parent link="$(arg drone_name)"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+
+    <gazebo reference="$(arg drone_name)">
+        <kinematic>true</kinematic>
+        <gravity>false</gravity>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+    <gazebo reference="$(arg drone_name)/m1_prop">
+        <kinematic>true</kinematic>
+        <gravity>false</gravity>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+    <gazebo reference="$(arg drone_name)/m2_prop">
+        <kinematic>true</kinematic>
+        <gravity>false</gravity>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+    <gazebo reference="$(arg drone_name)/m3_prop">
+        <kinematic>true</kinematic>
+        <gravity>false</gravity>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+    <gazebo reference="$(arg drone_name)/m4_prop">
+        <kinematic>true</kinematic>
+        <gravity>false</gravity>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <gazebo>
+      <plugin
+        filename="libkinematic_drone_plugin.so"
+        name="kinematic_drone_plugin::KinematicDrone">
+        <armed>true</armed> <!-- initial status -->
+        <arm_topic>$(arg drone_name)/command/arm</arm_topic>
+        <command_topic>$(arg drone_name)/command/twist</command_topic>
+        <!-- Prop link names — plugin spins these by writing WorldPose directly -->
+        <rotor_speeds>60. -60. 60. -60.</rotor_speeds>
+        <rotor_names>$(arg drone_name)/m1_prop $(arg drone_name)/m2_prop $(arg drone_name)/m3_prop $(arg drone_name)/m4_prop</rotor_names>
+        <!-- these provide some tuning for orientation calculations for body pose calculations -->
+        <kp_linear>80.0</kp_linear>   <!-- gain for correcting translational velocity -->
+        <kp_angular>10.0</kp_angular> <!-- gain for correcting angular velocity -->
+        <k_drag>5.0</k_drag>   <!-- acceleration factor for drag proportional to velocity -->
+        <maxAcceleration>40.0</maxAcceleration> <!-- maximum acceleration magnitude we will consider -->
+        <maxAngularRate>5.0</maxAngularRate>   <!-- clamp on 3-axis body angular rate (rad/s); limits attitude snap jerk -->
+        <!-- body center ~0.017 m above ground when legs rest on floor (half collision box height) -->
+        <landed_z>0.017</landed_z>
+        <pose_publish_frequency>50</pose_publish_frequency>
+      </plugin>
+    </gazebo>
+
+</robot>

@@ -1,0 +1,40 @@
+repositories:
+  # Backend-neutral Flexible Drones core, messages, descriptions, and tools.
+  # (This repo)
+  #flexible_drones:
+  #  type: git
+  #  url: https://github.com/CNURobotics/flexible_drones.git
+  #  version: alpha
+
+  # Gazebo simulation backend.
+  flexible_drones_gazebo:
+    type: git
+    url: https://github.com/CNURobotics/flexible_drones_gazebo.git
+    version: alpha
+  # Crazyflie hardware backend.
+  flexible_drones_crazyflie:
+    type: git
+    url: https://github.com/CNURobotics/flexible_drones_crazyflie.git
+    version: alpha
+  # ArduPilot/PiHawk hardware backend.
+  flexible_drones_arducopter:
+    type: git
+    url: https://github.com/CNURobotics/flexible_drones_arducopter.git
+    version: alpha
+  # OptiTrack/NatNet pose bridge.
+  flexible_drones_optitrack:
+    type: git
+    url: https://github.com/CNURobotics/flexible_drones_optitrack.git
+    version: alpha
+  # Optional FlexBE high-level state machine-based control.
+  flexible_drones_flexbe:
+    type: git
+    url: https://github.com/CNURobotics/flexible_drones_flexbe.git
+    version: alpha
+
+# Example deployment package
+# CNU SERC lab deployment overlays, rosters, and startup helpers.
+# chris_serc_deployment:
+#   type: git
+#   url: https://github.com/CNURobotics/chris_serc_deployment.git
+#   version: alpha

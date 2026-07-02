@@ -1,0 +1,6 @@
+bokeh
+casadi
+matplotlib
+numpy
+PySide6
+scipy

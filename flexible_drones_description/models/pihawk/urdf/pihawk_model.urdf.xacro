@@ -1,0 +1,313 @@
+<?xml version="1.0"?>
+<!--
+  Geometry and mesh adapted from:
+    https://github.com/NishanthARao/ROS-Quadcopter-Simulation
+    Commit: 60b6b3e186673b5baac4a8bfee34218a3af2013e (Nishanth A. Rao, 2020)
+  Changes made for Flexible Drones:
+    - Consolidated into single xacro (material.xacro / Kwad.gazebo inlined)
+    - Replaced $(find fly_bot) paths with package://flexible_drones_description/models/pihawk
+    - Replaced ROS 1 plugin stack (LiftDragPlugin, gazebo_ros_control, camera) with
+      KinematicDrone plugin to match crazyflie_model.urdf.xacro pattern
+    - Removed transmission elements (VelocityJointInterface, ROS 1 ros_control)
+    - Root link renamed to $(arg drone_name)
+    - Motor joints renamed m1..m4 to match KinematicDrone rotor_names convention
+    - Motor cylinder visuals remain on the root link; arms use fixed child links so RViz
+      can render front/back colors reliably, while the four prop links use continuous
+      joints — the plugin spins them by writing WorldPose directly each tick
+    - Removed all inertials; physics disabled via <kinematic>true</kinematic> so the
+      KinematicDrone plugin owns all body dynamics without physics interference
+
+MIT License — original work Copyright (c) 2020 Nishanth A. Rao
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="$(arg drone_name)">
+  <xacro:arg name="drone_name" default="pihawk"/>
+
+  <!-- ============================================================ -->
+  <!-- Properties                                                   -->
+  <!-- ============================================================ -->
+  <xacro:property name="width"    value="0.0315"    />
+  <xacro:property name="length"   value="0.45"      />
+  <xacro:property name="height"   value="0.01"      />
+  <xacro:property name="mass_fr"  value="0.5"       />
+  <xacro:property name="pi_value" value="3.14159263"/>
+  <xacro:property name="radiusp"  value="0.20"      />
+  <xacro:property name="prop_loc" value="0.15909"   />
+
+  <!-- Arm geometry helpers -->
+  <xacro:property name="arm_half" value="${length/2}"/>
+  <xacro:property name="arm_d"    value="${arm_half/2}"/>  <!-- arm center distance from body origin -->
+  <xacro:property name="s45"      value="${math.sin(pi_value/4)}"/>
+  <xacro:property name="c45"      value="${math.cos(pi_value/4)}"/>
+
+  <!-- Minimal inertials keep urdf2sdf from dropping preserved fixed child links.
+       The KinematicDrone plugin owns motion and directly sets WorldPose each tick. -->
+  <xacro:macro name="tiny_child_inertial">
+    <inertial>
+      <mass value="1e-6"/>
+      <inertia ixx="1e-9" iyy="1e-9" izz="1e-9"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </xacro:macro>
+
+  <material name="body_mat"><color rgba="0.3 0.3 0.3 1"/></material>
+  <material name="board_mat"><color rgba="0.2 0.5 0.2 1"/></material>
+  <material name="arm_front_mat"><color rgba="0.8 0 0 1"/></material>
+  <material name="arm_back_mat"><color rgba="0.1 0.1 0.1 1"/></material>
+  <material name="motor_mat"><color rgba="0.15 0.15 0.15 1"/></material>
+  <material name="prop_mat"><color rgba="0.2 0.2 0.2 1"/></material>
+
+  <!-- ============================================================ -->
+  <!-- Root body link — center plate, FC board, motor caps         -->
+  <!-- Arms are modeled as fixed child links so RViz can color     -->
+  <!-- front/back arms independently.                              -->
+  <!-- ============================================================ -->
+  <link name="$(arg drone_name)">
+    <!-- Center plate -->
+    <visual>
+      <origin xyz="0 0 0.005" rpy="0 0 0"/>
+      <geometry><box size="0.12 0.12 0.01"/></geometry>
+      <material name="body_mat"/>
+    </visual>
+    <!-- FC board mesh -->
+    <visual>
+      <origin xyz="0 0 0.015" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://flexible_drones_description/models/pihawk/meshes/collada_files/22V10.dae"
+              scale="0.005 0.005 0.005"/>
+      </geometry>
+      <material name="board_mat"/>
+    </visual>
+
+    <!-- Motor cylinders (at prop corner positions) -->
+    <visual>
+      <origin xyz="${prop_loc - 0.01} ${prop_loc - 0.01} 0.01" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.016" length="0.02"/></geometry>
+      <material name="motor_mat"/>
+    </visual>
+    <visual>
+      <origin xyz="${-(prop_loc - 0.01)} ${prop_loc - 0.01} 0.01" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.016" length="0.02"/></geometry>
+      <material name="motor_mat"/>
+    </visual>
+    <visual>
+      <origin xyz="${-(prop_loc - 0.01)} ${-(prop_loc - 0.01)} 0.01" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.016" length="0.02"/></geometry>
+      <material name="motor_mat"/>
+    </visual>
+    <visual>
+      <origin xyz="${prop_loc - 0.01} ${-(prop_loc - 0.01)} 0.01" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.016" length="0.02"/></geometry>
+      <material name="motor_mat"/>
+    </visual>
+
+    <!-- Collision: single bounding box approximation -->
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.30 0.30 0.05"/></geometry>
+    </collision>
+    <!-- inertial required by urdf2sdf to keep the root link in the model;
+         <kinematic>true</kinematic> in gazebo block prevents the physics engine from using it -->
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="1.6571710e-02" iyy="1.6655602e-02" izz="2.9261652e-02"
+                ixy="8.30806e-07" ixz="7.18277e-07" iyz="1.800197e-06"/>
+    </inertial>
+
+  </link>
+
+  <link name="$(arg drone_name)/arm_fl">
+    <xacro:tiny_child_inertial/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${arm_half} ${width} ${height}"/></geometry>
+      <material name="arm_front_mat"/>
+    </visual>
+  </link>
+  <link name="$(arg drone_name)/arm_fr">
+    <xacro:tiny_child_inertial/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${arm_half} ${width} ${height}"/></geometry>
+      <material name="arm_front_mat"/>
+    </visual>
+  </link>
+  <link name="$(arg drone_name)/arm_bl">
+    <xacro:tiny_child_inertial/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${arm_half} ${width} ${height}"/></geometry>
+      <material name="arm_back_mat"/>
+    </visual>
+  </link>
+  <link name="$(arg drone_name)/arm_br">
+    <xacro:tiny_child_inertial/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${arm_half} ${width} ${height}"/></geometry>
+      <material name="arm_back_mat"/>
+    </visual>
+  </link>
+
+  <joint name="$(arg drone_name)/arm_fl_joint" type="fixed">
+    <parent link="$(arg drone_name)"/>
+    <child link="$(arg drone_name)/arm_fl"/>
+    <origin xyz="${arm_d * c45} ${arm_d * s45} 0" rpy="0 0 ${pi_value/4}"/>
+  </joint>
+  <joint name="$(arg drone_name)/arm_fr_joint" type="fixed">
+    <parent link="$(arg drone_name)"/>
+    <child link="$(arg drone_name)/arm_fr"/>
+    <origin xyz="${arm_d * c45} ${-arm_d * s45} 0" rpy="0 0 ${-pi_value/4}"/>
+  </joint>
+  <joint name="$(arg drone_name)/arm_bl_joint" type="fixed">
+    <parent link="$(arg drone_name)"/>
+    <child link="$(arg drone_name)/arm_bl"/>
+    <origin xyz="${-arm_d * c45} ${arm_d * s45} 0" rpy="0 0 ${3*pi_value/4}"/>
+  </joint>
+  <joint name="$(arg drone_name)/arm_br_joint" type="fixed">
+    <parent link="$(arg drone_name)"/>
+    <child link="$(arg drone_name)/arm_br"/>
+    <origin xyz="${-arm_d * c45} ${-arm_d * s45} 0" rpy="0 0 ${-3*pi_value/4}"/>
+  </joint>
+
+  <!-- ============================================================ -->
+  <!-- Propeller links — continuous joints define the static offset. -->
+  <!-- The plugin accumulates angle and writes WorldPose directly. -->
+  <!-- m1=front-left CCW, m2=back-left CW, m3=back-right CCW,     -->
+  <!-- m4=front-right CW (ENU: +x forward, +y left)               -->
+  <!-- ============================================================ -->
+  <link name="$(arg drone_name)/m1_prop">
+    <xacro:tiny_child_inertial/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${0.03302/3} ${radiusp * 0.8} 0.001"/></geometry>
+      <material name="prop_mat"/>
+    </visual>
+  </link>
+  <link name="$(arg drone_name)/m2_prop">
+    <xacro:tiny_child_inertial/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${0.03302/3} ${radiusp * 0.8} 0.001"/></geometry>
+      <material name="prop_mat"/>
+    </visual>
+  </link>
+  <link name="$(arg drone_name)/m3_prop">
+    <xacro:tiny_child_inertial/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${0.03302/3} ${radiusp * 0.8} 0.001"/></geometry>
+      <material name="prop_mat"/>
+    </visual>
+  </link>
+  <link name="$(arg drone_name)/m4_prop">
+    <xacro:tiny_child_inertial/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${0.03302/3} ${radiusp * 0.8} 0.001"/></geometry>
+      <material name="prop_mat"/>
+    </visual>
+  </link>
+
+  <joint name="$(arg drone_name)/m1_joint" type="continuous">
+    <parent link="$(arg drone_name)"/>
+    <child  link="$(arg drone_name)/m1_prop"/>
+    <origin xyz=" ${prop_loc - 0.01}  ${prop_loc - 0.01} 0.021" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="$(arg drone_name)/m2_joint" type="continuous">
+    <parent link="$(arg drone_name)"/>
+    <child  link="$(arg drone_name)/m2_prop"/>
+    <origin xyz="${-(prop_loc - 0.01)}  ${prop_loc - 0.01} 0.021" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="$(arg drone_name)/m3_joint" type="continuous">
+    <parent link="$(arg drone_name)"/>
+    <child  link="$(arg drone_name)/m3_prop"/>
+    <origin xyz="${-(prop_loc - 0.01)} ${-(prop_loc - 0.01)} 0.021" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="$(arg drone_name)/m4_joint" type="continuous">
+    <parent link="$(arg drone_name)"/>
+    <child  link="$(arg drone_name)/m4_prop"/>
+    <origin xyz=" ${prop_loc - 0.01} ${-(prop_loc - 0.01)} 0.021" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <!-- ============================================================ -->
+  <!-- Gazebo tags                                                   -->
+  <!-- ============================================================ -->
+  <gazebo reference="$(arg drone_name)">
+    <kinematic>true</kinematic>
+    <gravity>false</gravity>
+    <selfCollide>false</selfCollide>
+  </gazebo>
+  <!-- preserveFixedJoint prevents urdf2sdf from lumping fixed child links
+       into the parent, which would eliminate the link entities. -->
+  <gazebo reference="$(arg drone_name)/arm_fl_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/arm_fr_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/arm_bl_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/arm_br_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/arm_fl">
+    <kinematic>true</kinematic>
+    <gravity>false</gravity><selfCollide>false</selfCollide>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/arm_fr">
+    <kinematic>true</kinematic>
+    <gravity>false</gravity><selfCollide>false</selfCollide>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/arm_bl">
+    <kinematic>true</kinematic>
+    <gravity>false</gravity><selfCollide>false</selfCollide>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/arm_br">
+    <kinematic>true</kinematic>
+    <gravity>false</gravity><selfCollide>false</selfCollide>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/m1_prop">
+    <kinematic>true</kinematic>
+    <gravity>false</gravity><selfCollide>false</selfCollide>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/m2_prop">
+    <kinematic>true</kinematic>
+    <gravity>false</gravity><selfCollide>false</selfCollide>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/m3_prop">
+    <kinematic>true</kinematic>
+    <gravity>false</gravity><selfCollide>false</selfCollide>
+  </gazebo>
+  <gazebo reference="$(arg drone_name)/m4_prop">
+    <kinematic>true</kinematic>
+    <gravity>false</gravity><selfCollide>false</selfCollide>
+  </gazebo>
+
+  <gazebo>
+    <!-- Kinematic Integrator Plugin -->
+    <plugin
+      filename="libkinematic_drone_plugin.so"
+      name="kinematic_drone_plugin::KinematicDrone">
+      <armed>true</armed>
+      <arm_topic>$(arg drone_name)/command/arm</arm_topic>
+      <command_topic>$(arg drone_name)/command/twist</command_topic>
+      <!-- Prop link names — plugin spins these by writing WorldPose directly -->
+      <rotor_speeds>60. -60. 60. -60.</rotor_speeds>
+      <rotor_names>$(arg drone_name)/m1_prop $(arg drone_name)/m2_prop $(arg drone_name)/m3_prop $(arg drone_name)/m4_prop</rotor_names>
+      <kp_linear>80.0</kp_linear>
+      <kp_angular>8.0</kp_angular> <!-- slow correction down a bit for larger drone -->
+      <k_drag>5.0</k_drag>
+      <maxAcceleration>40.0</maxAcceleration>
+      <maxAngularRate>4.0</maxAngularRate>   <!-- clamp on 3-axis body angular rate (rad/s); limits attitude snap jerk -->
+      <!-- body center is 0.005 m above ground when arm bottoms rest on floor -->
+      <landed_z>0.005</landed_z>
+      <pose_publish_frequency>50</pose_publish_frequency>
+    </plugin>
+  </gazebo>
+
+</robot>

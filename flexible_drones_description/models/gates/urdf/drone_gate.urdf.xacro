@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<!-- ros2 run xacro xacro drone_gate.urdf.xacro prefix:=gate > drone_gate.urdf -->
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="$(arg prefix)">
+  <xacro:arg name="prefix"      default="gateA"/>
+  <xacro:arg name="pipe_length" default="0.5"/>     <!-- metres for regular segments; 0.5=small 3/4" PVC, 1.0=BAG 1" PVC -->
+  <xacro:arg name="base_height" default="$(arg pipe_length)"/> <!-- first vertical segment height -->
+  <xacro:arg name="pipe_radius" default="0.01065"/> <!-- 0.01065=3/4" PVC, 0.01670=1" PVC -->
+
+  <xacro:property name="pipe_radius" value="$(arg pipe_radius)"/>
+  <xacro:property name="pipe_length" value="$(arg pipe_length)"/>
+  <xacro:property name="base_height" value="$(arg base_height)"/>
+  <xacro:property name="gate_height" value="${base_height + 2*pipe_length}"/>
+
+  <!-- Visual+collision block for one pipe segment at a given origin -->
+  <xacro:macro name="pipe_visual" params="xyz rpy length">
+    <visual>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <geometry>
+        <cylinder length="${length}" radius="${pipe_radius}"/>
+      </geometry>
+      <material name="gray">
+        <color rgba="0.6 0.6 0.6 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <geometry>
+        <cylinder length="${length}" radius="${pipe_radius}"/>
+      </geometry>
+    </collision>
+  </xacro:macro>
+
+  <!-- Root link with all gate geometry. -->
+  <link name="$(arg prefix)_base_link">
+    <!-- Inertial required for Gazebo URDF->SDF conversion (link is dropped without it).
+         Gate is static so these values don't affect physics.
+         KDL warns about root-link inertia but this is benign — robot_state_publisher still works. -->
+    <inertial>
+      <mass value="5.0"/>
+      <origin xyz="0 ${pipe_length/2} ${gate_height/2}" rpy="0 0 0"/>
+      <inertia
+        ixx="${5.0/12.0 * (pipe_length**2 + gate_height**2)}"
+        iyy="${5.0/12.0 * ((2*pipe_length)**2 + gate_height**2)}"
+        izz="${5.0/12.0 * ((2*pipe_length)**2 + pipe_length**2)}"
+        ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+
+    <!-- BASE LOOP — raised by pipe_radius so pipes sit on the floor surface -->
+    <xacro:pipe_visual xyz="${-pipe_length/2} 0 ${pipe_radius}"              rpy="0 1.5708 0" length="${pipe_length}"/>
+    <xacro:pipe_visual xyz="${pipe_length/2} 0 ${pipe_radius}"               rpy="0 1.5708 0" length="${pipe_length}"/>
+    <xacro:pipe_visual xyz="${-pipe_length/2} ${pipe_length} ${pipe_radius}" rpy="0 1.5708 0" length="${pipe_length}"/>
+    <xacro:pipe_visual xyz="${pipe_length/2} ${pipe_length} ${pipe_radius}"  rpy="0 1.5708 0" length="${pipe_length}"/>
+    <xacro:pipe_visual xyz="${-pipe_length} ${pipe_length/2} ${pipe_radius}" rpy="1.5708 0 0" length="${pipe_length}"/>
+    <xacro:pipe_visual xyz="${pipe_length} ${pipe_length/2} ${pipe_radius}"  rpy="1.5708 0 0" length="${pipe_length}"/>
+
+    <!-- VERTICAL POSTS -->
+    <xacro:pipe_visual xyz="0 0 ${base_height/2}"                  rpy="0 0 0" length="${base_height}"/>
+    <xacro:pipe_visual xyz="0 0 ${base_height + pipe_length/2}"    rpy="0 0 0" length="${pipe_length}"/>
+    <xacro:pipe_visual xyz="0 0 ${base_height + pipe_length*1.5}"  rpy="0 0 0" length="${pipe_length}"/>
+    <xacro:pipe_visual xyz="0 ${pipe_length} ${base_height/2}"                 rpy="0 0 0" length="${base_height}"/>
+    <xacro:pipe_visual xyz="0 ${pipe_length} ${base_height + pipe_length/2}"   rpy="0 0 0" length="${pipe_length}"/>
+    <xacro:pipe_visual xyz="0 ${pipe_length} ${base_height + pipe_length*1.5}" rpy="0 0 0" length="${pipe_length}"/>
+
+    <!-- CROSSBARS -->
+    <xacro:pipe_visual xyz="0 ${pipe_length/2} ${base_height}"                 rpy="1.5708 0 0" length="${pipe_length}"/>
+    <xacro:pipe_visual xyz="0 ${pipe_length/2} ${base_height + pipe_length}"   rpy="1.5708 0 0" length="${pipe_length}"/>
+    <xacro:pipe_visual xyz="0 ${pipe_length/2} ${base_height + 2*pipe_length}" rpy="1.5708 0 0" length="${pipe_length}"/>
+  </link>
+
+  <!-- Target frames used by trajectory planners and RViz course displays. -->
+  <link name="$(arg prefix)_target_1"/>
+  <joint name="$(arg prefix)_joint_target_1" type="fixed">
+    <parent link="$(arg prefix)_base_link"/>
+    <child link="$(arg prefix)_target_1"/>
+    <origin xyz="0 ${pipe_length/2} ${base_height + pipe_length/2}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="$(arg prefix)_target_2"/>
+  <joint name="$(arg prefix)_joint_target_2" type="fixed">
+    <parent link="$(arg prefix)_base_link"/>
+    <child link="$(arg prefix)_target_2"/>
+    <origin xyz="0 ${pipe_length/2} ${base_height + pipe_length*1.5}" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="$(arg prefix)_base_link">
+    <visual>
+      <cast_shadows>false</cast_shadows>
+    </visual>
+  </gazebo>
+
+  <!-- static must be on the model element, not a link reference -->
+  <gazebo>
+    <static>true</static>
+  </gazebo>
+
+</robot>

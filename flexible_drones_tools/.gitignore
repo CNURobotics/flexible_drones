@@ -1,0 +1,17 @@
+.DS_Store
+crazyswarm2_sim_webots/
+*.pyc
+*.o
+*~
+.vscode
+__pycache__
+.DS_Store
+crazyswarm2_sim_webots/
+*.pyc
+*.o
+*~
+.vscode
+cache
+build
+install
+log

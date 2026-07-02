@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>flexible_drones</name>
+  <version>0.0.1</version>
+  <description>
+    Aggregate package for the backend-neutral flexible_drones stack: core
+    orchestration, interfaces, shared robot descriptions, and CLI tools.
+    It intentionally does NOT pull in hardware/sim backends (Crazyflie,
+    Gazebo, PiHawk/ArduCopter, OptiTrack) or deployment config, since those
+    are project-specific choices. For CNU SERC lab deployments, build up to
+    chris_serc_deployment instead, which depends on this package plus the
+    specific backends and roster/overlay data used in that lab. Use the
+    flexible_drones_flexbe aggregate package when FlexBE states and behaviors
+    are also needed.
+  </description>
+  <author>Emma Faith</author>
+  <author>Andrew Farney</author>
+  <author>Sebastian Fox</author>
+  <author>Evangelina Grimes</author>
+  <author>Aubrie Kooiker</author>
+  <maintainer email="robotics@cnu.edu">David Conner</maintainer>
+  <url type="website">https://github.com/CNURobotics/flexible_drones</url>
+  <url type="bugtracker">https://github.com/CNURobotics/flexible_drones/issues</url>
+  <url type="repository">https://github.com/CNURobotics/flexible_drones</url>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Interface layer -->
+  <exec_depend>flexible_drones_msgs</exec_depend>
+
+  <!-- Core orchestration -->
+  <exec_depend>flexible_drones_core</exec_depend>
+
+  <!-- Shared project data -->
+  <exec_depend>flexible_drones_description</exec_depend>
+
+  <!-- Tools -->
+  <exec_depend>flexible_drones_tools</exec_depend>
+
+  <!-- Hardware/sim backends (Crazyflie, Gazebo, PiHawk/ArduCopter, OptiTrack)
+       and deployment roster/overlay data are intentionally not declared
+       here; they are project-specific. See chris_serc_deployment. -->
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

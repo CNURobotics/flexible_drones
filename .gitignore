@@ -1,0 +1,5 @@
+__pycache__/
+cache/
+log
+fastdds_wired_only_profile.xml
+.vscode

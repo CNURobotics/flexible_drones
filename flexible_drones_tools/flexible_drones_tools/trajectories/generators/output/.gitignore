@@ -1,0 +1,4 @@
+# Generated trajectory CSVs are local build artifacts; ignore everything here
+# except this file so the folder is kept in the tree.
+*
+!.gitignore

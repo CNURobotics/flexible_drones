@@ -1,0 +1,12 @@
+pipe_length: '0.5'
+pipe_radius: '0.01065'
+label_z: 1.75
+gates:
+  - prefix: gate_A
+    pose: {x: 1.75, y: 0.0, z: 0.0, yaw: 1.5708}
+  - prefix: gate_B
+    pose: {x: 0.0, y: 1.75, z: 0.0, yaw: 3.1416}
+  - prefix: gate_C
+    pose: {x: -1.75, y: 0.0, z: 0.0, yaw: -1.5708}
+  - prefix: gate_D
+    pose: {x: 0.0, y: -1.75, z: 0.0, yaw: 0.0}

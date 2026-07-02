@@ -1,0 +1,14 @@
+pipe_length: '1.0'
+base_height: '0.5'
+pipe_radius: '0.01670'
+label_z: 3.0
+gates:
+  # Gate frames sit on the far pipe edge; centers are at +/-2.5 m.
+  - prefix: gate_A
+    pose: {x: 3.0, y: 0.0, z: 0.0, yaw: 1.5708}
+  - prefix: gate_B
+    pose: {x: 0.0, y: 3.0, z: 0.0, yaw: 3.1416}
+  - prefix: gate_C
+    pose: {x: -3.0, y: 0.0, z: 0.0, yaw: -1.5708}
+  - prefix: gate_D
+    pose: {x: 0.0, y: -3.0, z: 0.0, yaw: 0.0}

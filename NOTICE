@@ -1,0 +1,31 @@
+flexible_drones
+Copyright 2026 Christopher Newport University
+Capable Humanitarian Robotics and Intelligent Systems Lab (CHRISLAB)
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+================================================================================
+Third-Party Software Notice
+================================================================================
+
+The Flexible Drones stack uses several workspace repositories (see README.md,
+"Repository layout"). At least one optional backend builds against proprietary
+third-party software that is not covered by the Apache License, Version 2.0:
+
+- `flexible_drones_optitrack` builds against NaturalPoint, Inc.'s
+  (OptiTrack) proprietary NatNet SDK. That SDK is fetched directly from
+  NaturalPoint at build time (`scripts/fetch_natnet_sdk.py`) rather than
+  vendored in git. See that repository's own NOTICE for details.
+
+This NOTICE does not itself grant any rights to that third-party software;
+consult the referenced repository and the third party's own license terms.
+
+The `flexible_drones_description` package includes or derives model assets from
+MIT-licensed upstream work:
+
+- Crazyflie meshes and model data from Bitcraze AB, with authorship credited to
+  Kimberly McGuire / Bitcraze AB in the source assets.
+- PiHawk model data derived from Nishanth A. Rao's ROS Quadcopter Simulation
+  assets.
+
+The original license notices are retained in the corresponding source files.

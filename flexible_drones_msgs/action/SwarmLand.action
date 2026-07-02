@@ -1,0 +1,48 @@
+# Copyright 2026 Christopher Newport University
+# Capable Humanitarian Robotics and Intelligent Systems Lab (CHRISLAB)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Swarm-wide land: dispatches to all commandable drones in parallel.
+# Safety-critical — proceeds to every commandable drone regardless of unavailable count.
+# height: signed world-frame Z target (ENU metres).
+#   0.0  = ground (default)
+#   > 0  = elevated surface (table, platform)
+#   < 0  = below origin (pit, recessed pad)
+# Fanned out unchanged to each drone's Land.Goal.height. PiHawk ignores height and
+# relies on ArduPilot LAND mode; non-zero height support on PiHawk is a future feature.
+float32 height                        # target landing Z in world frame (metres); 0.0 = ground
+builtin_interfaces/Duration duration  # transition time; 0 means use provider default
+---
+int32 targeted              # drones selected for this command
+int32 unavailable           # drones skipped because their action server was unreachable
+int32 sent                  # goals sent to a reachable action server
+int32 accepted              # goals accepted by the action server
+int32 rejected              # goals rejected by the action server
+int32 goal_response_timeout # goals that got no response before the configured timeout
+int32 succeeded             # accepted goals that finished with return_code 0
+int32 failed                # accepted goals that finished with nonzero return_code or exception
+int32 canceled              # accepted goals that were canceled
+int32 result_timeout        # accepted goals that produced no result before the configured timeout
+int32 return_code           # 0 all succeeded, 1 partial, 2 none succeeded, 4 another swarm action is active, 5 canceled
+---
+int32 targeted
+int32 unavailable
+int32 sent
+int32 accepted
+int32 rejected
+int32 goal_response_timeout
+int32 succeeded
+int32 failed
+int32 canceled
+int32 result_timeout
